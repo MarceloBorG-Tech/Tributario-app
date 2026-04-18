@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA básico -->
+    <meta name="theme-color" content="#1a5c3a" />
+    <meta name="description" content="Simulador de optimización tributaria Chile — Global Complementario AT2025" />
+    <meta name="application-name" content="TributarioCL" />
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TributarioCL" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Splash screens iOS (opcionales pero mejoran la experiencia) -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <!-- Android / Chrome -->
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#1a5c3a" />
+    <meta name="msapplication-tap-highlight" content="no" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <title>TributarioCL</title>
+
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;400;500&display=swap" rel="stylesheet" />
+
+    <style>
+      /* Evita flash blanco durante carga */
+      html { background: #f7f6f2; }
+      @media (prefers-color-scheme: dark) { html { background: #111210; } }
+      /* Safe area para iPhone con notch */
+      body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
