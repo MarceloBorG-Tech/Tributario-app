@@ -10,7 +10,11 @@ export default function ResultadoPanel({ datos }) {
   const rows = [
     { label: 'Base imponible',            sin: sin.base,           con: con.base },
     { label: 'Impuesto global bruto',     sin: sin.impuestoBruto,  con: con.impuestoBruto },
-    { label: `Ahorro APV (Rég. ${datos.apvRegimen || 'B'})`, sin: 0, con: con.creditoAPV },
+    { 
+      label: `Ahorro APV (Rég. ${datos.apvRegimen || 'B'})`, 
+      sin: 0, 
+      con: datos.apvRegimen === 'A' ? con.creditoAPV : Math.max(0, sin.impuestoBruto - con.impuestoBruto)
+    },
     { label: 'Crédito hijos',             sin: sin.creditoHijos,   con: con.creditoHijos },
     { label: 'Contribuciones B. Raíces',  sin: sin.contribuciones, con: con.contribuciones },
     { label: 'Crédito empresa',           sin: sin.creditoEmpresa || 0, con: con.creditoEmpresa || 0 },
