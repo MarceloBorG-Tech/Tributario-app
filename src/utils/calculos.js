@@ -62,8 +62,9 @@ export function calcularEscenario(datos, conAPV = false) {
     creditoAPV = apvEfectivo * APV_A_CREDITO_PCT
   }
 
-  // Crédito por Hijos (Art. 55 bis) — sin tope de ingreso en Global Complementario
-  const creditoHijos = (Number(hijos) || 0) * CREDITO_HIJO
+  // Crédito por Hijos (Art. 55 ter) — tope de ingresos 792 UF anuales
+const TOPE_INGRESO_HIJOS = 792 * UF_REF
+const creditoHijos = base <= TOPE_INGRESO_HIJOS ? (Number(hijos) || 0) * CREDITO_HIJO : 0
 
   // 4. Cálculo de Impuesto Neto (donde entran las contribuciones)
   // Primero restamos créditos por hijos, APV A y crédito empresa
