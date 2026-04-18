@@ -15,7 +15,7 @@ export const TRAMOS = [
   { limite: Infinity,     tasa: 0.40,   rebaja: 32395445.28 }
 ];
 
-export const UF_REF            = 38750; 
+export const UF_REF = 39728; 
 export const CREDITO_HIJO      = 4.4 * UF_REF; 
 export const APV_A_TOPE_UF     = 600;         
 export const APV_A_CREDITO_PCT = 0.15;        
