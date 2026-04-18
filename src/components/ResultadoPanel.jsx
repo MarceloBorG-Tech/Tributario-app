@@ -1,26 +1,73 @@
-import { calcularEscenario, fmt, fmtPct, tramoInfo } from '../utils/calculos'
+import { calcularComparativa, fmt, fmtPct, tramoInfo } from '../utils/calculos'
 import { AÑO_TRIBUTARIO } from '../data/tramos'
+import { CheckCircle, AlertCircle, Info } from 'lucide-react'
 
 export default function ResultadoPanel({ datos }) {
-  const sin = calcularEscenario(datos, false)
-  const con = calcularEscenario(datos, true)
-  const ahorro = sin.impuestoNeto - con.impuestoNeto
-  const ti = tramoInfo(con.base)
+  const { actual, optimizado, tipoOptimo, labelOptimo, recomendacion, ahorro, tieneAPV } = calcularComparativa(datos)
+  const ti = tramoInfo(optimizado.base)
+
+  // Icono y color según tipo de recomendación
+  const esOptimo = (tipoOptimo === 'apv_a' && datos.apvRegimen === 'A' && tieneAPV) ||
+                   (tipoOptimo === 'apv_b' && datos.apvRegimen === 'B' && tieneAPV)
+  const esSinAPV = tipoOptimo === 'sin_apv'
+
+  const alertClass = esOptimo ? 'alert-success' : esSinAPV ? 'alert-warn' : 'alert-info'
+  const AlertIcon = esOptimo ? CheckCircle : esSinAPV ? AlertCircle : Info
 
   const rows = [
-    { label: 'Base imponible',            sin: sin.base,           con: con.base },
-    { label: 'Impuesto global bruto',     sin: sin.impuestoBruto,  con: con.impuestoBruto },
-    { 
-      label: `Ahorro APV (Rég. ${datos.apvRegimen || 'B'})`, 
-      sin: 0, 
-      con: datos.apvRegimen === 'A' ? con.creditoAPV : Math.max(0, sin.impuestoBruto - con.impuestoBruto)
+    {
+      label: 'Base imponible',
+      act: actual.base,
+      opt: optimizado.base,
     },
-    { label: 'Crédito hijos',             sin: sin.creditoHijos,   con: con.creditoHijos },
-    { label: 'Contribuciones B. Raíces',  sin: sin.contribuciones, con: con.contribuciones },
-    { label: 'Crédito empresa',           sin: sin.creditoEmpresa || 0, con: con.creditoEmpresa || 0 },
-    { label: 'Impuesto neto determinado', sin: sin.impuestoNeto,   con: con.impuestoNeto, bold: true },
-    { label: 'PPM + Retenciones',         sin: sin.creditosTotales, con: con.creditosTotales },
-    { label: 'Resultado (Dev. / Pago)',   sin: sin.resultado,       con: con.resultado, resultado: true },
+    {
+      label: 'Impuesto global bruto',
+      act: actual.impuestoBruto,
+      opt: optimizado.impuestoBruto,
+    },
+    {
+      label: 'APV Régimen A (crédito 15%)',
+      act: actual.apvRegimen === 'A' ? actual.creditoAPV : 0,
+      opt: optimizado.apvRegimen === 'A' ? optimizado.creditoAPV : 0,
+    },
+    {
+      label: 'APV Régimen B (reducción base)',
+      act: actual.apvRegimen === 'B' && tieneAPV ? Math.max(0, calcularComparativa(datos).actual.impuestoBruto - actual.impuestoBruto) : 0,
+      opt: optimizado.apvRegimen === 'B' && tipoOptimo !== 'sin_apv' ? Math.max(0, actual.impuestoBruto - optimizado.impuestoBruto) : 0,
+    },
+    {
+      label: 'Crédito hijos (Art. 55 ter)',
+      act: actual.creditoHijos,
+      opt: optimizado.creditoHijos,
+    },
+    {
+      label: 'Contribuciones B. Raíces',
+      act: actual.contribuciones,
+      opt: optimizado.contribuciones,
+    },
+    {
+      label: 'Crédito empresa (integración)',
+      act: actual.creditoEmpresa || 0,
+      opt: optimizado.creditoEmpresa || 0,
+    },
+    {
+      label: 'Impuesto neto determinado',
+      act: actual.impuestoNeto,
+      opt: optimizado.impuestoNeto,
+      bold: true,
+    },
+    {
+      label: 'PPM + Retenciones pagadas',
+      act: actual.creditosTotales,
+      opt: optimizado.creditosTotales,
+    },
+    {
+      label: 'Resultado (Dev. / Pago)',
+      act: actual.resultado,
+      opt: optimizado.resultado,
+      bold: true,
+      resultado: true,
+    },
   ]
 
   return (
@@ -29,13 +76,13 @@ export default function ResultadoPanel({ datos }) {
       {/* KPIs */}
       <div className="grid-3">
         <div className="metric green">
-          <div className="m-label">Ahorro estimado</div>
+          <div className="m-label">Ahorro con plan óptimo</div>
           <div className="m-value">{fmt(ahorro)}</div>
-          <div className="m-sub">Con plan de optimización</div>
+          <div className="m-sub">{labelOptimo}</div>
         </div>
-        <div className={`metric ${con.resultado >= 0 ? 'blue' : 'red'}`}>
-          <div className="m-label">{con.resultado >= 0 ? 'Devolución estimada' : 'Pago estimado'}</div>
-          <div className="m-value">{fmt(Math.abs(con.resultado))}</div>
+        <div className={`metric ${optimizado.resultado >= 0 ? 'blue' : 'red'}`}>
+          <div className="m-label">{optimizado.resultado >= 0 ? 'Devolución estimada' : 'Pago estimado'}</div>
+          <div className="m-value">{fmt(Math.abs(optimizado.resultado))}</div>
           <div className="m-sub">Con plan optimizado</div>
         </div>
         <div className="metric">
@@ -45,48 +92,70 @@ export default function ResultadoPanel({ datos }) {
         </div>
       </div>
 
+      {/* Recomendación */}
+      <div className={`alert ${alertClass}`} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+        <AlertIcon size={16} style={{ flexShrink: 0, marginTop: '1px' }} />
+        <span style={{ fontSize: '13px', lineHeight: '1.5' }}><strong>Recomendación:</strong> {recomendacion}</span>
+      </div>
+
       {/* Tabla comparativa */}
       <div className="card" style={{ padding: 0 }}>
         <div style={{
           padding: '12px 16px',
           borderBottom: '1px solid var(--c-border)',
           fontSize: '13px', fontWeight: '500',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center'
         }}>
-          Comparativa AT{AÑO_TRIBUTARIO}
+          <span>Comparativa AT{AÑO_TRIBUTARIO}</span>
+          <span style={{ fontSize: '11px', color: 'var(--c-text-3)' }}>
+            Situación actual vs. {labelOptimo}
+          </span>
         </div>
         <div className="scroll-x">
           <table className="data-table">
             <thead>
               <tr>
                 <th>Concepto</th>
-                <th style={{ textAlign: 'right' }}>Sin plan</th>
-                <th style={{ textAlign: 'right', color: 'var(--c-accent)' }}>Con optimización</th>
+                <th style={{ textAlign: 'right' }}>
+                  {tieneAPV ? `Situación actual (APV Rég. ${datos.apvRegimen})` : 'Situación actual (Sin APV)'}
+                </th>
+                <th style={{ textAlign: 'right', color: 'var(--c-accent)' }}>
+                  Plan óptimo ({labelOptimo})
+                </th>
                 <th style={{ textAlign: 'right' }}>Diferencia</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => {
-                const diff = r.con - r.sin
+                const diff = r.opt - r.act
+                const isBold = r.bold
                 const isResultado = r.resultado
-                const isBold = r.bold || isResultado
 
-                const resultadoColor = (val) => {
-                  if (!isResultado) return val < r.sin ? 'var(--c-accent)' : undefined
-                  return val >= 0 ? 'var(--c-accent)' : 'var(--c-danger)'
+                let diffColor = 'var(--c-text-3)'
+                if (isResultado) {
+                  diffColor = diff > 0 ? 'var(--c-accent)' : diff < 0 ? 'var(--c-danger)' : 'var(--c-text-3)'
+                } else {
+                  // Para impuestos, menos es mejor (color verde si baja)
+                  diffColor = diff < 0 ? 'var(--c-accent)' : diff > 0 ? 'var(--c-danger)' : 'var(--c-text-3)'
                 }
+
+                const resultadoColorAct = isResultado
+                  ? r.act >= 0 ? 'var(--c-accent)' : 'var(--c-danger)'
+                  : undefined
+                const resultadoColorOpt = isResultado
+                  ? r.opt >= 0 ? 'var(--c-accent)' : 'var(--c-danger)'
+                  : 'var(--c-accent)'
 
                 return (
                   <tr key={i} style={{ background: isBold ? 'var(--c-bg)' : undefined }}>
                     <td style={{ fontWeight: isBold ? '600' : undefined }}>{r.label}</td>
-                    <td style={{ textAlign: 'right' }}>{fmt(r.sin)}</td>
-                    <td style={{ textAlign: 'right', color: 'var(--c-accent)', fontWeight: isBold ? '600' : undefined }}>
-                      {fmt(r.con)}
+                    <td style={{ textAlign: 'right', color: resultadoColorAct, fontWeight: isBold ? '600' : undefined }}>
+                      {fmt(r.act)}
                     </td>
-                    <td style={{
-                      textAlign: 'right',
-                      color: diff < 0 ? 'var(--c-accent)' : diff > 0 ? 'var(--c-danger)' : 'var(--c-text-3)',
-                      fontWeight: '500',
-                    }}>
+                    <td style={{ textAlign: 'right', color: resultadoColorOpt, fontWeight: isBold ? '600' : undefined }}>
+                      {fmt(r.opt)}
+                    </td>
+                    <td style={{ textAlign: 'right', color: diffColor, fontWeight: '500' }}>
                       {diff !== 0 ? (diff > 0 ? '+' : '') + fmt(diff) : '—'}
                     </td>
                   </tr>
@@ -99,8 +168,8 @@ export default function ResultadoPanel({ datos }) {
 
       {/* Tasa efectiva */}
       <div className="alert alert-info" style={{ fontSize: '12px' }}>
-        Tasa efectiva sin plan: <strong>{fmtPct(sin.tasaEfectiva)}</strong> →
-        con optimización: <strong>{fmtPct(con.tasaEfectiva)}</strong>
+        Tasa efectiva situación actual: <strong>{fmtPct(actual.tasaEfectiva)}</strong> →
+        con plan óptimo: <strong>{fmtPct(optimizado.tasaEfectiva)}</strong>
       </div>
 
     </div>
